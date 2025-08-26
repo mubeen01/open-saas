@@ -8,15 +8,15 @@ app OpenSaaS {
   head: [
     "<link rel='icon' href='/favicon.ico' />",
     "<meta charset='utf-8' />",
-    "<meta name='description' content='Your apps main description and features.' />",
-    "<meta name='author' content='Your (App) Name' />",
-    "<meta name='keywords' content='saas, solution, product, app, service' />",
+    "<meta name='description' content='Adverizeo helps SMEs create GDPR-compliant, multilingual ads with AI – optimized for Europe and beyond.' />",
+    "<meta name='author' content='Adverizeo' />",
+    "<meta name='keywords' content='AI marketing, ad generation, GDPR compliance, SaaS, advertising, Europe, SMEs, automation, multilingual ads' />",
     
     "<meta property='og:type' content='website' />",
-    "<meta property='og:title' content='Your Open SaaS App' />",
-    "<meta property='og:site_name' content='Your Open SaaS App' />",
+    "<meta property='og:title' content='Adverizeo – Smarter Ads with AI' />",
+    "<meta property='og:site_name' content='Adverizeo' />",
     "<meta property='og:url' content='https://your-saas-app.com' />",
-    "<meta property='og:description' content='Your apps main description and features.' />",
+    "<meta property='og:description' content='Create compliant ads in 60 seconds with Adverizeo – the AI-powered SaaS for SMEs.' />",
     "<meta property='og:image' content='https://your-saas-app.com/public-banner.webp' />",
     "<meta name='twitter:image' content='https://your-saas-app.com/public-banner.webp' />",
     "<meta name='twitter:image:width' content='800' />",
@@ -38,7 +38,7 @@ app OpenSaaS {
       //   (RequestPasswordReset(Route|Page), PasswordReset(Route|Page), EmailVerification(Route|Page))
       email: {
         fromField: {
-          name: "Open SaaS App",
+          name: "Adverizeo",
           email: "admin@adverizeo.com"
         },
         emailVerification: {
@@ -89,7 +89,7 @@ app OpenSaaS {
     //   Once you are ready for production, switch to e.g. "SendGrid" or "Mailgun" providers. Check out https://docs.opensaas.sh/guides/email-sending/ .
     provider: SendGrid,
     defaultFrom: {
-      name: "Open SaaS App",
+      name: "Adverizeo",
       // When using a real provider, e.g. SendGrid, you must use the same email address that you configured your account to send out emails with!
       email: "admin@adverizeo.com"
     },
