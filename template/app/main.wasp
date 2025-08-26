@@ -3,7 +3,7 @@ app OpenSaaS {
     version: "^0.17.0"
   },
 
-  title: "My Open SaaS App",
+  title: "Adverizeo",
 
   head: [
     "<link rel='icon' href='/favicon.ico' />",

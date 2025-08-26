@@ -1,416 +1,316 @@
-import { type Task } from 'wasp/entities';
+import { useState } from 'react'
 
-import {
-  createTask,
-  deleteTask,
-  generateGptResponse,
-  getAllTasksByUser,
-  updateTask,
-  useQuery,
-} from 'wasp/client/operations';
-
-import { Loader2, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { Button } from '../components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Checkbox } from '../components/ui/checkbox';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { cn } from '../lib/utils';
-import type { GeneratedSchedule, Task as ScheduleTask, TaskItem, TaskPriority } from './schedule';
-
-export default function DemoAppPage() {
-  return (
-    <div className='py-10 lg:mt-10'>
-      <div className='mx-auto max-w-7xl px-6 lg:px-8'>
-        <div className='mx-auto max-w-4xl text-center'>
-          <h2 className='mt-2 text-4xl font-bold tracking-tight text-foreground sm:text-5xl'>
-            <span className='text-primary'>AI</span> Day Scheduler
-          </h2>
-        </div>
-        <p className='mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-muted-foreground'>
-          This example app uses OpenAI's chat completions with function calling to return a structured JSON
-          object. Try it out, enter your day's tasks, and let AI do the rest!
-        </p>
-        {/* begin AI-powered Todo List */}
-        <Card className='my-8 bg-muted/10'>
-          <CardContent className='sm:w-[90%] md:w-[70%] lg:w-[50%] py-10 px-6 mx-auto my-8 space-y-10'>
-            <NewTaskForm handleCreateTask={createTask} />
-          </CardContent>
-        </Card>
-        {/* end AI-powered Todo List */}
-      </div>
-    </div>
-  );
+type Task = {
+  id: string
+  description: string
+  isDone: boolean
+  time: string
 }
 
-function NewTaskForm({ handleCreateTask }: { handleCreateTask: typeof createTask }) {
-  const [description, setDescription] = useState<string>('');
-  const [todaysHours, setTodaysHours] = useState<number>(8);
-  const [response, setResponse] = useState<GeneratedSchedule | null>({
-    tasks: [
-      {
-        name: 'Respond to emails',
-        priority: 'high' as TaskPriority,
-      },
-      {
-        name: 'Learn WASP',
-        priority: 'low' as TaskPriority,
-      },
-      {
-        name: 'Read a book',
-        priority: 'medium' as TaskPriority,
-      },
-    ],
-    taskItems: [
-      {
-        description: 'Read introduction and chapter 1',
-        time: 0.5,
-        taskName: 'Read a book',
-      },
-      {
-        description: 'Read chapter 2 and take notes',
-        time: 0.3,
-        taskName: 'Read a book',
-      },
-      {
-        description: 'Read chapter 3 and summarize key points',
-        time: 0.2,
-        taskName: 'Read a book',
-      },
-      {
-        description: 'Check and respond to important emails',
-        time: 1,
-        taskName: 'Respond to emails',
-      },
-      {
-        description: 'Organize and prioritize remaining emails',
-        time: 0.5,
-        taskName: 'Respond to emails',
-      },
-      {
-        description: 'Draft responses to urgent emails',
-        time: 0.5,
-        taskName: 'Respond to emails',
-      },
-      {
-        description: 'Watch tutorial video on WASP',
-        time: 0.5,
-        taskName: 'Learn WASP',
-      },
-      {
-        description: 'Complete online quiz on the basics of WASP',
-        time: 1.5,
-        taskName: 'Learn WASP',
-      },
-      {
-        description: 'Review quiz answers and clarify doubts',
-        time: 1,
-        taskName: 'Learn WASP',
-      },
-    ],
-  });
-  const [isPlanGenerating, setIsPlanGenerating] = useState<boolean>(false);
+type AIResponse = {
+  id: string
+  content: string
+  createdAt: string
+}
 
-  const { data: tasks, isLoading: isTasksLoading } = useQuery(getAllTasksByUser);
+export default function DemoAppPage() {
+  const [prompt, setPrompt] = useState('')
+  const [taskDescription, setTaskDescription] = useState('')
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [responses, setResponses] = useState<AIResponse[]>([])
 
-  const handleSubmit = async () => {
-    try {
-      await handleCreateTask({ description });
-      setDescription('');
-    } catch (err: any) {
-      window.alert('Error: ' + (err.message || 'Something went wrong'));
+  const handleGenerateResponse = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!prompt.trim()) return
+
+    // Mock response for now - replace with API call later
+    const mockResponse: AIResponse = {
+      id: Date.now().toString(),
+      content: `Mock AI response to: "${prompt}"`,
+      createdAt: new Date().toISOString(),
     }
-  };
 
-  const handleGeneratePlan = async () => {
-    try {
-      setIsPlanGenerating(true);
-      const response = await generateGptResponse({
-        hours: todaysHours,
-      });
-      if (response) {
-        setResponse(response as unknown as GeneratedSchedule);
-      }
-    } catch (err: any) {
-      window.alert('Error: ' + (err.message || 'Something went wrong'));
-    } finally {
-      setIsPlanGenerating(false);
+    setResponses((prev) => [mockResponse, ...prev])
+    setPrompt('')
+  }
+
+  const handleCreateTask = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!taskDescription.trim()) return
+
+    // Mock task creation - replace with API call later
+    const mockTask: Task = {
+      id: Date.now().toString(),
+      description: taskDescription,
+      isDone: false,
+      time: '1',
     }
-  };
+
+    setTasks((prev) => [...prev, mockTask])
+    setTaskDescription('')
+  }
+
+  const handleDeleteTask = (taskId: string) => {
+    setTasks((prev) => prev.filter((task) => task.id !== taskId))
+  }
+
+  const handleToggleTask = (taskId: string) => {
+    setTasks((prev) =>
+      prev.map((task) =>
+        task.id === taskId ? { ...task, isDone: !task.isDone } : task
+      )
+    )
+  }
 
   return (
-    <div className='flex flex-col justify-center gap-10'>
-      <div className='flex flex-col gap-3'>
-        <div className='flex items-center justify-between gap-3'>
-          <Input
-            type='text'
-            id='description'
-            className='flex-1'
-            placeholder='Enter task description'
-            value={description}
-            onChange={(e) => setDescription(e.currentTarget.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleSubmit();
-              }
-            }}
-          />
-          <Button
-            type='button'
-            onClick={handleSubmit}
-            disabled={!description}
-            variant='default'
-            size='default'
-          >
-            Add Task
-          </Button>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            AI Demo App
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            Explore AI capabilities and manage your tasks
+          </p>
+          <div className="mt-4">
+            <a
+              href="/"
+              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              ← Back to Home
+            </a>
+          </div>
         </div>
-      </div>
 
-      <div className='space-y-10 col-span-full'>
-        {isTasksLoading && <div className='text-muted-foreground'>Loading...</div>}
-        {tasks!! && tasks.length > 0 ? (
-          <div className='space-y-4'>
-            {tasks.map((task: Task) => (
-              <Todo
-                key={task.id}
-                id={task.id}
-                isDone={task.isDone}
-                description={task.description}
-                time={task.time}
-              />
-            ))}
-            <div className='flex flex-col gap-3'>
-              <div className='flex items-center justify-between gap-3'>
-                <Label htmlFor='time' className='text-sm text-muted-foreground text-nowrap font-semibold'>
-                  How many hours will you work today?
-                </Label>
-                <Input
-                  type='number'
-                  id='time'
-                  step={0.5}
-                  min={1}
-                  max={24}
-                  className='min-w-[7rem] text-center'
-                  value={todaysHours}
-                  onChange={(e) => setTodaysHours(+e.currentTarget.value)}
-                />
+        <div className="grid gap-8 lg:grid-cols-2">
+          {/* AI Chat Section */}
+          <div className="space-y-6">
+            <div className="bg-white dark:bg-gray-800 shadow rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center">
+                  <span className="mr-2">🤖</span>
+                  AI Assistant
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Generate responses using AI. Each request uses 1 credit.
+                </p>
+              </div>
+              <div className="p-6">
+                <form onSubmit={handleGenerateResponse} className="space-y-4">
+                  <div>
+                    <label
+                      htmlFor="prompt"
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                    >
+                      Your prompt
+                    </label>
+                    <textarea
+                      id="prompt"
+                      value={prompt}
+                      onChange={(e) => setPrompt(e.target.value)}
+                      placeholder="Ask me anything..."
+                      rows={4}
+                      className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={!prompt.trim()}
+                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Generate Response
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            {/* AI Responses */}
+            <div className="bg-white dark:bg-gray-800 shadow rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                  Recent AI Responses
+                </h3>
+              </div>
+              <div className="p-6">
+                {responses.length > 0 ? (
+                  <div className="space-y-4 max-h-96 overflow-y-auto">
+                    {responses.map((response) => (
+                      <div
+                        key={response.id}
+                        className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                      >
+                        <p className="text-sm whitespace-pre-wrap text-gray-900 dark:text-white">
+                          {response.content}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                          {new Date(response.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                    No AI responses yet. Try generating one!
+                  </p>
+                )}
               </div>
             </div>
           </div>
-        ) : (
-          <div className='text-muted-foreground text-center'>Add tasks to begin</div>
-        )}
-      </div>
 
-      <Button
-        type='button'
-        disabled={isPlanGenerating || tasks?.length === 0}
-        onClick={() => handleGeneratePlan()}
-        variant='default'
-        size='default'
-        className='w-full'
-        data-testid='generate-schedule-button'
-      >
-        {isPlanGenerating ? (
-          <>
-            <Loader2 className='inline-block mr-2 animate-spin' />
-            Generating...
-          </>
-        ) : (
-          'Generate Schedule'
-        )}
-      </Button>
+          {/* Task Management Section */}
+          <div className="space-y-6">
+            <div className="bg-white dark:bg-gray-800 shadow rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center">
+                  <span className="mr-2">✅</span>
+                  Task Manager
+                </h3>
+              </div>
+              <div className="p-6">
+                <form onSubmit={handleCreateTask} className="space-y-4">
+                  <div>
+                    <label
+                      htmlFor="task"
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                    >
+                      New task
+                    </label>
+                    <input
+                      id="task"
+                      type="text"
+                      value={taskDescription}
+                      onChange={(e) => setTaskDescription(e.target.value)}
+                      placeholder="Enter task description"
+                      className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={!taskDescription.trim()}
+                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Add Task
+                  </button>
+                </form>
+              </div>
+            </div>
 
-      {!!response && (
-        <div className='flex flex-col'>
-          <h3 className='text-lg font-semibold text-foreground mb-4'>Today's Schedule</h3>
-          <Schedule schedule={response} />
-        </div>
-      )}
-    </div>
-  );
-}
+            {/* Task List */}
+            <div className="bg-white dark:bg-gray-800 shadow rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                  Your Tasks
+                </h3>
+              </div>
+              <div className="p-6">
+                {tasks.length > 0 ? (
+                  <div className="space-y-3">
+                    {tasks.map((task) => (
+                      <div
+                        key={task.id}
+                        className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-600 rounded-lg"
+                      >
+                        <div className="flex items-center space-x-3 flex-1">
+                          <input
+                            type="checkbox"
+                            checked={task.isDone}
+                            onChange={() => handleToggleTask(task.id)}
+                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                          />
+                          <span
+                            className={`text-gray-900 dark:text-white ${
+                              task.isDone
+                                ? 'line-through text-gray-500 dark:text-gray-400'
+                                : ''
+                            }`}
+                          >
+                            {task.description}
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-200 px-2 py-1 rounded">
+                            {task.time}h
+                          </span>
+                          <button
+                            onClick={() => handleDeleteTask(task.id)}
+                            className="px-3 py-1 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                    No tasks yet. Create your first task!
+                  </p>
+                )}
+              </div>
+            </div>
 
-type TodoProps = Pick<Task, 'id' | 'isDone' | 'description' | 'time'>;
-
-function Todo({ id, isDone, description, time }: TodoProps) {
-  const handleCheckboxChange = async (checked: boolean) => {
-    await updateTask({
-      id,
-      isDone: checked,
-    });
-  };
-
-  const handleTimeChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    await updateTask({
-      id,
-      time: e.currentTarget.value,
-    });
-  };
-
-  const handleDeleteClick = async () => {
-    await deleteTask({ id });
-  };
-
-  return (
-    <Card className='p-4'>
-      <div className='flex items-center justify-between w-full'>
-        <div className='flex items-center justify-between gap-5 w-full'>
-          <div className='flex items-center gap-3'>
-            <Checkbox
-              checked={isDone}
-              onCheckedChange={handleCheckboxChange}
-              className='data-[state=checked]:bg-primary data-[state=checked]:border-primary'
-            />
-            <span
-              className={cn('text-foreground', {
-                'line-through text-muted-foreground': isDone,
-              })}
-            >
-              {description}
-            </span>
+            {/* Quick Stats */}
+            <div className="bg-white dark:bg-gray-800 shadow rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                  Quick Stats
+                </h3>
+              </div>
+              <div className="p-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-indigo-600">
+                      {tasks.length}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      Total Tasks
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">
+                      {tasks.filter((t) => t.isDone).length}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      Completed
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-purple-600">
+                      {responses.length}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      AI Responses
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-orange-600">3</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      Credits Left
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className='flex items-center gap-2'>
-            <Input
-              id='time'
-              type='number'
-              min={0.5}
-              step={0.5}
-              className={cn('w-18 h-8 text-center text-xs', {
-                'pointer-events-none opacity-50': isDone,
-              })}
-              value={time}
-              onChange={handleTimeChange}
-            />
-            <span
-              className={cn('italic text-muted-foreground text-xs', {
-                'text-muted-foreground': isDone,
-              })}
-            >
-              hrs
-            </span>
-          </div>
         </div>
-        <div className='flex items-center justify-end w-15'>
-          <Button
-            variant='ghost'
-            size='sm'
-            onClick={handleDeleteClick}
-            title='Remove task'
-            className='p-1 h-auto text-destructive hover:text-destructive/80'
-          >
-            <Trash2 size='20' />
-          </Button>
-        </div>
-      </div>
-    </Card>
-  );
-}
 
-function Schedule({ schedule }: { schedule: GeneratedSchedule }) {
-  return (
-    <div className='flex flex-col gap-6 py-6' data-testid='schedule'>
-      <div className='space-y-4'>
-        {!!schedule.tasks ? (
-          schedule.tasks
-            .map((task) => <TaskCard key={task.name} task={task} taskItems={schedule.taskItems} />)
-            .sort((a, b) => {
-              const priorityOrder: TaskPriority[] = ['low', 'medium', 'high'];
-              if (a.props.task.priority && b.props.task.priority) {
-                return (
-                  priorityOrder.indexOf(b.props.task.priority) - priorityOrder.indexOf(a.props.task.priority)
-                );
-              } else {
-                return 0;
-              }
-            })
-        ) : (
-          <div className='text-muted-foreground text-center'>OpenAI didn't return any Tasks. Try again.</div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function TaskCard({ task, taskItems }: { task: ScheduleTask; taskItems: TaskItem[] }) {
-  const taskPriorityToColorMap: Record<TaskPriority, string> = {
-    high: 'bg-destructive/10 border-destructive/20 text-red-500',
-    medium: 'bg-warning/10 border-warning/20 text-warning',
-    low: 'bg-success/10 border-success/20 text-success',
-  };
-
-  return (
-    <Card className={cn('border-2', taskPriorityToColorMap[task.priority])}>
-      <CardHeader className='pb-3'>
-        <CardTitle className='flex items-center justify-between text-base'>
-          <span>{task.name}</span>
-          <span className='text-xs font-medium italic'> {task.priority} priority</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className='pt-0'>
-        {!!taskItems ? (
-          <ul className='space-y-2'>
-            {taskItems.map((taskItem) => {
-              if (taskItem.taskName === task.name) {
-                return <TaskCardItem key={taskItem.description} {...taskItem} />;
-              }
-              return null;
-            })}
+        {/* Instructions */}
+        <div className="mt-8 bg-blue-50 dark:bg-blue-900/50 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+          <h3 className="text-lg font-medium text-blue-900 dark:text-blue-100 mb-2">
+            🔧 Development Note
+          </h3>
+          <p className="text-sm text-blue-700 dark:text-blue-200">
+            This is a working demo page with mock functionality. To make it
+            production-ready:
+          </p>
+          <ul className="text-sm text-blue-700 dark:text-blue-200 mt-2 list-disc list-inside">
+            <li>Replace mock functions with actual API calls</li>
+            <li>Connect to your backend services</li>
+            <li>Add authentication and user management</li>
           </ul>
-        ) : (
-          <div className='text-muted-foreground text-center'>
-            OpenAI didn't return any Task Items. Try again.
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function TaskCardItem({ description, time }: TaskItem) {
-  const [isDone, setIsDone] = useState<boolean>(false);
-
-  const formattedTime = useMemo(() => {
-    if (time === 0) return '0min';
-    const hours = Math.floor(time);
-    const minutes = Math.round((time - hours) * 60);
-
-    const parts: string[] = [];
-    if (hours > 0) parts.push(`${hours}hr`);
-    if (minutes > 0) parts.push(`${minutes}min`);
-
-    return parts.join(' ');
-  }, [time]);
-
-  const handleCheckedChange = (checked: boolean | 'indeterminate') => {
-    setIsDone(checked === true);
-  };
-
-  return (
-    <li className='flex items-center justify-between gap-4 p-2 rounded-md'>
-      <div className='flex items-center gap-3 flex-1'>
-        <Checkbox
-          checked={isDone}
-          onCheckedChange={handleCheckedChange}
-          className='data-[state=checked]:bg-primary data-[state=checked]:border-primary'
-        />
-        <span
-          className={cn('leading-tight text-sm', {
-            'line-through text-muted-foreground opacity-50': isDone,
-          })}
-        >
-          {description}
-        </span>
+        </div>
       </div>
-      <span
-        className={cn('text-sm text-muted-foreground', {
-          'line-through opacity-50': isDone,
-        })}
-      >
-        {formattedTime}
-      </span>
-    </li>
-  );
+    </div>
+  )
 }
